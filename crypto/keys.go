@@ -11,6 +11,25 @@ type PrivateKey struct {
 	key ed25519.PrivateKey
 }
 
+func NewPrivateKeyFromSeed(seed []byte) *PrivateKey {
+	if len(seed) != seedLen {
+		panic("invalid seed length, must be 32")
+	}
+
+	return &PrivateKey{
+		key: ed25519.NewKeyFromSeed(seed),
+	}
+}
+
+func NewPrivateKeyFromString(s string) *PrivateKey {
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return NewPrivateKeyFromSeed(b)
+}
+
 const (
 	privKeyLen = 64 // length of the private key
 	pubKeyLen  = 32 // length of the public key
