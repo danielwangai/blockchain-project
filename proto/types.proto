@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/danielwangai/blockchain-project/proto";
+
+message Block {
+  Header header = 1;
+  repeated Transaction transactions = 2;
+}
+
+message Header {
+  int32 version = 1;
+  int32 height = 2; // total number of blocks
+  bytes prevHash = 3; // hash of the previous block
+  bytes rootHash = 4; // merkle root of transaction
+  int64 timestamp = 5; // when the block was created
+}
+
+message Transaction {}
