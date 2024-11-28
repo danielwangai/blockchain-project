@@ -15,4 +15,26 @@ message Header {
   int64 timestamp = 5; // when the block was created
 }
 
-message Transaction {}
+// TxInput details of the where the value/coins are being sent from
+message TxInput {
+  // previous transaction hash
+  bytes prevTxHash = 1;
+  // the index of the output of the previous transaction
+  uint32 prevOutIndex = 2;
+  bytes publicKey = 3;
+  bytes signature = 4;// TODO: remove tx signature - signature is generated after signing the transaction hence cannot present during signing
+}
+
+// TxOutput details of the where the value/coins are being sent to - Beneficiary
+message TxOutput {
+  // value to be sent to beneficiary
+  int64 amount = 1;
+  // address of the beneficiary of the transaction
+  bytes address = 2;
+}
+
+message Transaction {
+  int32 version = 1;
+  repeated TxInput inputs = 2;
+  repeated TxOutput outputs = 3;
+}

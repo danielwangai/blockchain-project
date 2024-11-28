@@ -4,7 +4,16 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"io"
+)
+
+const (
+	privKeyLen   = 64 // length of the private key
+	signatureLen = 64
+	pubKeyLen    = 32 // length of the public key
+	seedLen      = 32
+	addressLen   = 20
 )
 
 type PrivateKey struct {
@@ -29,13 +38,6 @@ func NewPrivateKeyFromString(s string) *PrivateKey {
 
 	return NewPrivateKeyFromSeed(b)
 }
-
-const (
-	privKeyLen = 64 // length of the private key
-	pubKeyLen  = 32 // length of the public key
-	seedLen    = 32
-	addressLen = 20
-)
 
 func GeneratePrivateKey() *PrivateKey {
 	seed := make([]byte, seedLen)
@@ -64,6 +66,14 @@ type PublicKey struct {
 	key ed25519.PublicKey
 }
 
+func PublicKeyFromBytes(b []byte) *PublicKey {
+	if len(b) != pubKeyLen {
+		panic("invalid public key length, must be 32")
+	}
+
+	return &PublicKey{key: ed25519.PublicKey(b)}
+}
+
 // Address returns last 20 characters on the public address
 func (p *PublicKey) Address() Address {
 	return Address{
@@ -90,6 +100,15 @@ type Signature struct {
 
 func (s *Signature) Bytes() []byte {
 	return s.value
+}
+
+func SignatureFromBytes(b []byte) *Signature {
+	fmt.Println("Len: ", len(b))
+	if len(b) != signatureLen {
+		panic("invalid signature length, must be 64")
+	}
+
+	return &Signature{value: b}
 }
 
 func (s *Signature) Verify(pubKey *PublicKey, msg []byte) bool {
