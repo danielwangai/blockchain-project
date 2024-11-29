@@ -2,34 +2,35 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/danielwangai/blockchain-project/node"
 	"github.com/danielwangai/blockchain-project/proto"
 	"google.golang.org/grpc"
 	"log"
-	"net"
-	"time"
 )
 
 func main() {
-	node := node.NewNode()
-	opts := []grpc.ServerOption{}
-	grpcServer := grpc.NewServer(opts...)
+	makeNode(":3000", []string{})
+	makeNode(":4000", []string{":3000"})
+	select {}
+	//node := node.NewNode()
+	//go func() {
+	//	for {
+	//		time.Sleep(2 * time.Second)
+	//		makeTransaction()
+	//	}
+	//}()
+	//log.Fatal(node.Start(":3000"))
+}
 
-	ln, err := net.Listen("tcp", ":3000")
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-
-	proto.RegisterNodeServer(grpcServer, node)
-	fmt.Println("node running on port 3010")
-	go func() {
-		for {
-			time.Sleep(2 * time.Second)
-			makeTransaction()
+func makeNode(listenAddr string, bootstrapNodes []string) *node.Node {
+	n := node.NewNode()
+	go n.Start(listenAddr)
+	if len(bootstrapNodes) > 0 {
+		if err := n.BootstrapNetwork(bootstrapNodes); err != nil {
+			log.Fatal(err)
 		}
-	}()
-	grpcServer.Serve(ln)
+	}
+	return n
 }
 
 func makeTransaction() {
