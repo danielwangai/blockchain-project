@@ -2,11 +2,10 @@ package node
 
 import (
 	"context"
-	"fmt"
 	"github.com/danielwangai/blockchain-project/proto"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
-	"log"
 	"net"
 	"sync"
 )
@@ -14,15 +13,21 @@ import (
 type Node struct {
 	listenAddr string
 	version    string
+	logger     *zap.SugaredLogger
 	peerLock   sync.RWMutex
 	peers      map[proto.NodeClient]*proto.Version // using a map since it's easier to manage; O(1) access
 	proto.UnimplementedNodeServer
 }
 
 func NewNode() *Node {
+	loggerConfig := zap.NewDevelopmentConfig()
+	loggerConfig.EncoderConfig.TimeKey = ""
+	//loggerConfig.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05")
+	logger, _ := loggerConfig.Build()
 	return &Node{
 		peers:   make(map[proto.NodeClient]*proto.Version),
 		version: "bchain-0.1",
+		logger:  logger.Sugar(),
 	}
 }
 
@@ -31,7 +36,8 @@ func (n *Node) addPeer(c proto.NodeClient, v *proto.Version) {
 	n.peerLock.Lock()
 	defer n.peerLock.Unlock()
 
-	fmt.Printf("new peer connected: %s - height(%d)\n", v.Version, v.Height)
+	n.logger.Debugw("new peer connected", "addr", n.listenAddr, "height", v.Height)
+
 	n.peers[c] = v
 }
 
@@ -53,7 +59,7 @@ func (n *Node) BootstrapNetwork(addrs []string) error {
 		// establish connection with node n
 		v, err := c.Handshake(context.Background(), n.getVersion())
 		if err != nil {
-			fmt.Printf("handshake error: %s\n", err)
+			n.logger.Error("handshake error: ", err)
 			continue
 		}
 
@@ -72,11 +78,11 @@ func (n *Node) Start(listenAddr string) error {
 
 	ln, err := net.Listen("tcp", listenAddr)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		n.logger.Errorf("failed to start: %v\n", err)
 	}
 
 	proto.RegisterNodeServer(grpcServer, n)
-	fmt.Printf("node running on port %s\n", listenAddr)
+	n.logger.Infow("node running on", "port", listenAddr)
 
 	return grpcServer.Serve(ln)
 }
@@ -100,7 +106,7 @@ func (n *Node) Handshake(ctx context.Context, v *proto.Version) (*proto.Version,
 
 func (n *Node) HandleTransaction(ctx context.Context, tx *proto.Transaction) (*proto.Ack, error) {
 	peer, _ := peer.FromContext(ctx)
-	fmt.Printf("Received transaction from peer %s\n", peer)
+	n.logger.Infow("Received transaction from", "peer", peer)
 	return &proto.Ack{}, nil
 }
 
