@@ -6,30 +6,22 @@ import (
 	"github.com/danielwangai/blockchain-project/proto"
 	"google.golang.org/grpc"
 	"log"
+	"time"
 )
 
 func main() {
 	makeNode(":3000", []string{})
+	time.Sleep(time.Second)
 	makeNode(":4000", []string{":3000"})
+	time.Sleep(4 * time.Second)
+	makeNode(":6000", []string{":4000"})
 	select {}
-	//node := node.NewNode()
-	//go func() {
-	//	for {
-	//		time.Sleep(2 * time.Second)
-	//		makeTransaction()
-	//	}
-	//}()
-	//log.Fatal(node.Start(":3000"))
 }
 
 func makeNode(listenAddr string, bootstrapNodes []string) *node.Node {
 	n := node.NewNode()
-	go n.Start(listenAddr)
-	if len(bootstrapNodes) > 0 {
-		if err := n.BootstrapNetwork(bootstrapNodes); err != nil {
-			log.Fatal(err)
-		}
-	}
+	go n.Start(listenAddr, bootstrapNodes)
+
 	return n
 }
 
